@@ -1,7 +1,6 @@
 package com.example.sr.controller;
 
-import com.example.sr.model.SchemaEntity;
-import com.example.sr.service.SchemaService;
+import com.example.sr.service.SchemaRegistryService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -10,26 +9,26 @@ import java.util.Map;
 @RequestMapping("/subjects")
 public class SchemaController {
 
-    private final SchemaService service;
+    private final SchemaRegistryService service;
 
-    public SchemaController(SchemaService service) {
+    public SchemaController(SchemaRegistryService service) {
         this.service = service;
     }
 
-    @PostMapping("/{subject}/versions")
+    @PostMapping("/subjects/{subject}/versions")
     public Map<String, Object> register(
             @PathVariable String subject,
-            @RequestBody Map<String, String> body
+            @RequestBody RegisterSchemaRequest req
     ) {
-        SchemaEntity s = service.register(subject, body.get("schema"));
+        SchemaEntity s = service.register(subject, req.getSchema());
         return Map.of(
-                "id", s.id(),
-                "version", s.version()
+            "id", s.id(),
+            "version", s.version()
         );
     }
 
     @GetMapping("/{subject}/versions/latest")
-    public SchemaEntity latest(@PathVariable String subject) {
+    public Map<String, Object> latest(@PathVariable String subject) {
         return service.latest(subject);
     }
 }

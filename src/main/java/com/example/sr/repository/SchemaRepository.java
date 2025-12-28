@@ -1,8 +1,9 @@
 package com.example.sr.repository;
 
-import com.example.sr.model.SchemaEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+
+import java.util.Map;
 
 @Repository
 public class SchemaRepository {
@@ -13,7 +14,15 @@ public class SchemaRepository {
         this.jdbc = jdbc;
     }
 
-    public Integer nextVersion(String subject) {
+    public Integer findIdByFingerprint(String fingerprint) {
+        return jdbc.query(
+                "SELECT id FROM schemas WHERE fingerprint = ?",
+                rs -> rs.next() ? rs.getInt("id") : null,
+                fingerprint
+        );
+    }
+
+    public int nextVersion(String subject) {
         return jdbc.queryForObject(
                 "SELECT COALESCE(MAX(version), 0) + 1 FROM schemas WHERE subject = ?",
                 Integer.class,
@@ -21,25 +30,28 @@ public class SchemaRepository {
         );
     }
 
-    public void save(SchemaEntity s) {
-        jdbc.update("""
-            INSERT INTO schemas(subject, version, schema, fingerprint)
-            VALUES (?, ?, ?, ?)
-        """, s.subject(), s.version(), s.schema(), s.fingerprint());
+    public int insert(String subject, int version, String schema, String fingerprint) {
+        return jdbc.queryForObject(
+                """
+                INSERT INTO schemas(subject, version, schema, fingerprint)
+                VALUES (?, ?, ?, ?)
+                RETURNING id
+                """,
+                Integer.class,
+                subject, version, schema, fingerprint
+        );
     }
 
-    public SchemaEntity latest(String subject) {
-        return jdbc.queryForObject("""
-            SELECT id, subject, version, schema, fingerprint
-            FROM schemas
-            WHERE subject = ?
-            ORDER BY version DESC LIMIT 1
-        """, (rs, i) -> new SchemaEntity(
-                rs.getInt("id"),
-                rs.getString("subject"),
-                rs.getInt("version"),
-                rs.getString("schema"),
-                rs.getString("fingerprint")
-        ), subject);
+    public Map<String, Object> latest(String subject) {
+        return jdbc.queryForMap(
+                """
+                SELECT subject, version, schema
+                FROM schemas
+                WHERE subject = ?
+                ORDER BY version DESC
+                LIMIT 1
+                """,
+                subject
+        );
     }
 }
