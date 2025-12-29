@@ -15,7 +15,7 @@ services:
   schema-registry:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: ./Dockerfile
     depends_on:
       - postgres
     environment:

@@ -3,6 +3,7 @@ package com.example.sr.service;
 import com.example.sr.repository.SchemaRepository;
 import org.apache.avro.Schema;
 import org.springframework.stereotype.Service;
+import com.example.sr.model.SchemaEntity;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -18,14 +19,15 @@ public class SchemaRegistryService {
         this.repository = repository;
     }
 
-    public int register(String subject, String schemaText) {
+    public SchemaEntity register(String subject, String schemaText) {
         validateAvro(schemaText);
 
         String fingerprint = fingerprint(schemaText);
 
-        Integer existingId = repository.findIdByFingerprint(fingerprint);
-        if (existingId != null) {
-            return existingId;
+        // nếu schema đã tồn tại
+        SchemaEntity existing = repository.findByFingerprint(fingerprint);
+        if (existing != null) {
+            return existing;
         }
 
         int version = repository.nextVersion(subject);

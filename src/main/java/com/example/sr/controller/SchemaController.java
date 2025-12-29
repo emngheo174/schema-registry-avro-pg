@@ -2,6 +2,8 @@ package com.example.sr.controller;
 
 import com.example.sr.service.SchemaRegistryService;
 import org.springframework.web.bind.annotation.*;
+import com.example.sr.dto.RegisterSchemaRequest;
+import com.example.sr.model.SchemaEntity;
 
 import java.util.Map;
 
@@ -15,7 +17,7 @@ public class SchemaController {
         this.service = service;
     }
 
-    @PostMapping("/subjects/{subject}/versions")
+    @PostMapping("/{subject}/versions")
     public Map<String, Object> register(
             @PathVariable String subject,
             @RequestBody RegisterSchemaRequest req
