@@ -15,6 +15,20 @@ public class SchemaRepository {
         this.jdbc = jdbc;
     }
 
+    @Query(value = """
+        SELECT subject
+        FROM schemas
+        WHERE subject = :subject
+        FOR UPDATE
+    """, nativeQuery = true)
+    
+    @Query("SELECT DISTINCT s.subject FROM SchemaEntity s")
+    List<String> findAllSubjects();
+
+    @Query("SELECT s.version FROM SchemaEntity s WHERE s.subject = :subject ORDER BY s.version")
+    List<Integer> findVersionsBySubject(@Param("subject") String subject);
+
+    String lockSubject(@Param("subject") String subject);
     public SchemaEntity findByFingerprint(String fingerprint) {
         return jdbc.query("""
             SELECT id, subject, version, schema, fingerprint

@@ -22,15 +22,21 @@ public class SchemaController {
             @PathVariable String subject,
             @RequestBody RegisterSchemaRequest req
     ) {
-        SchemaEntity s = service.register(subject, req.getSchema());
-        return Map.of(
-            "id", s.id(),
-            "version", s.version()
-        );
+        return service.register(subject, body.get("schema"));
     }
 
     @GetMapping("/{subject}/versions/latest")
     public Map<String, Object> latest(@PathVariable String subject) {
         return service.latest(subject);
+    }
+
+    @GetMapping("/subjects")
+    public List<String> listSubjects() {
+        return schemaRepository.findAllSubjects();
+    }
+
+    @GetMapping("/{subject}/versions")
+    public List<Integer> listVersions(@PathVariable String subject) {
+        return schemaRepository.findVersionsBySubject(subject);
     }
 }

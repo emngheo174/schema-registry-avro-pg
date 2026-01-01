@@ -19,19 +19,30 @@ public class SchemaRegistryService {
         this.repository = repository;
     }
 
+    @Transactional
     public SchemaEntity register(String subject, String schemaText) {
-        validateAvro(schemaText);
 
-        String fingerprint = fingerprint(schemaText);
-
-        // nếu schema đã tồn tại
-        SchemaEntity existing = repository.findByFingerprint(fingerprint);
-        if (existing != null) {
-            return existing;
+        // 1. validate avro schema
+        try {
+            new org.apache.avro.Schema.Parser().parse(schemaText);
+        } catch (Exception e) {
+            throw new InvalidSchemaException("Invalid Avro schema: " + e.getMessage());
         }
 
-        int version = repository.nextVersion(subject);
-        return repository.insert(subject, version, schemaText, fingerprint);
+        // 2. lock subject (race condition fix)
+        schemaRepository.lockSubject(subject);
+
+        // 3. calculate next version
+        Integer maxVersion = schemaRepository.findMaxVersionBySubject(subject);
+        int nextVersion = (maxVersion == null) ? 1 : maxVersion + 1;
+
+        // 4. save
+        SchemaEntity entity = new SchemaEntity();
+        entity.setSubject(subject);
+        entity.setVersion(nextVersion);
+        entity.setSchema(schemaText);
+
+        return schemaRepository.save(entity);
     }
 
     public Map<String, Object> latest(String subject) {
